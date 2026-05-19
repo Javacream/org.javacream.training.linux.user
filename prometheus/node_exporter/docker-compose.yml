@@ -1,0 +1,36 @@
+services:
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+
+    # Required so node_exporter can inspect the host, not just the container.
+    pid: host
+    network_mode: host
+
+    command:
+      - "--path.rootfs=/host"
+
+      # Enable systemd collector.
+      - "--collector.systemd"
+
+      # Optional but useful: collect restart counts.
+      - "--collector.systemd.enable-restarts-metrics"
+
+      # Optional: limit systemd metrics to selected unit types.
+      # Remove or adjust this if you want all units.
+      - "--collector.systemd.unit-include=(docker|ssh|sshd|nginx|apache2|postgresql|mysql|mariadb|redis|prometheus|grafana-server|node_exporter)\\.service"
+
+    volumes:
+      # Host filesystem.
+      - "/:/host:ro,rslave"
+
+      # Host systemd DBus socket.
+      # Required for systemd collector inside a container on many Linux systems.
+      - "/run/dbus/system_bus_socket:/run/dbus/system_bus_socket:ro"
+
+      # Compatibility path for some distros.
+      - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket:ro"
+
+    # Port mapping is not needed with network_mode: host.
+    # Node Exporter listens on host port 9100.
